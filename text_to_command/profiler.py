@@ -176,7 +176,8 @@ class Profiler:
                         f"{entry.function_name}: {entry.execution_time:.9f}s | {entry.saved_arguments}"
                     )
 
-    def visualize_aggregated(self, scopes: dict = None):
+    def visualize_aggregated(
+            self, scopes: dict = None, show_per_session_stats: bool = True, show_call_stats: bool = True):
         if not scopes:
             scopes = self.scopes.items()
         for scope, sessions in scopes:
@@ -194,12 +195,15 @@ class Profiler:
 
             for function, execution_time_entries in grouped_data.items():
                 print(f"--- {function} ---")
-                print(f"called:")
-                print(f"    count({len(execution_time_entries):.9f})")
-                print(f"    avg({len(execution_time_entries) / len(sessions)})/session")
+                if show_call_stats:
+                    print(f"called:")
+                    print(f"    count({len(execution_time_entries):.9f})")
+                    if show_per_session_stats:
+                        print(f"    avg({len(execution_time_entries) / len(sessions)})/session")
                 print(f"execution time")
                 print(f"    sum({sum(execution_time_entries):.9f})")
-                print(f"    avg({sum(execution_time_entries) / len(sessions):.9f})/session")
+                if show_per_session_stats:
+                    print(f"    avg({sum(execution_time_entries) / len(sessions):.9f})/session")
                 print(f"    avg({sum(execution_time_entries) / len(execution_time_entries):.9f})/call")
                 print()
 

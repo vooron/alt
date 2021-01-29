@@ -2,20 +2,27 @@ from datetime import date
 
 import pytest
 
+from text_to_command.choices_value_provider import ChoicesValueProvider, ChoiceValue
 from text_to_command.parameters import DigitParameter, Entry, OrdinalParameter, BooleanParameter, IntegerParameter, \
     FloatParameter, DateParameter, TimeUnitParameter
 
 
 class TestDigitParsing:
-
-    parameter = DigitParameter("test", "test")
+    parameter = DigitParameter("id", "test")
+    parameter_with_choices = DigitParameter("id", "test", choices=ChoicesValueProvider(values=[
+        ChoiceValue(label="1", value=1),
+        ChoiceValue(label="2", value=2),
+        ChoiceValue(label="3", value=3),
+        ChoiceValue(label="4", value=4),
+        ChoiceValue(label="5", value=5),
+    ], is_lazy=False))
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("1", {1}),
         ("2", {2}),
     ])
     def test_parse_single_digit(self, query, expected_answers):
-        assert {e.value for e in self.parameter.parse_entries(query)} == expected_answers
+        assert {e.value for e in self.parameter.get_entries(query)} == expected_answers
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("1, 2, 3, 4, 5, 6, 7, 8,9, 10", {1, 2, 3, 4, 5, 6, 7, 8, 9}),
@@ -23,32 +30,38 @@ class TestDigitParsing:
         ("1 minus one,  negative three, ,3", {1, -1, -3, 3}),
     ])
     def test_parse_multiple_digits(self, query, expected_answers):
-        assert {e.value for e in self.parameter.parse_entries(query)} == expected_answers
+        assert {e.value for e in self.parameter.get_entries(query)} == expected_answers
+
+    @pytest.mark.parametrize("query,expected_answers", [
+        ("1, 2, 3, 4, 5, 6, 7, 8,9, 10", {1, 2, 3, 4, 5}),
+    ])
+    def test_parse_multiple_digits(self, query, expected_answers):
+        assert {e.value for e in self.parameter_with_choices.get_entries(query)} == expected_answers
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("one, two", {1, 2}),
         ("two,three", {2, 3}),
     ])
     def test_parse_multiple_string_digits(self, query, expected_answers):
-        assert {e.value for e in self.parameter.parse_entries(query)} == expected_answers
+        assert {e.value for e in self.parameter.get_entries(query)} == expected_answers
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("one, 2", {1, 2}),
         ("1,three", {1, 3}),
     ])
     def test_parse_multiple_mixed_digits(self, query, expected_answers):
-        assert {e.value for e in self.parameter.parse_entries(query)} == expected_answers
+        assert {e.value for e in self.parameter.get_entries(query)} == expected_answers
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("one, 2", {Entry(starts_from=0, ends_at=3, value=1), Entry(starts_from=5, ends_at=6, value=2)}),
         ("1,three", {Entry(starts_from=0, ends_at=1, value=1), Entry(starts_from=2, ends_at=7, value=3)}),
     ])
     def test_parse_entries(self, query, expected_answers):
-        assert set(self.parameter.parse_entries(query)) == expected_answers
+        assert set(self.parameter.get_entries(query)) == expected_answers
 
 
 class TestOrdinalParsing:
-    parameter = OrdinalParameter("test", "test")
+    parameter = OrdinalParameter("id", "test")
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("one, 2", set()),
@@ -56,11 +69,11 @@ class TestOrdinalParsing:
         ("first,9th", {Entry(starts_from=0, ends_at=5, value=1), Entry(starts_from=6, ends_at=9, value=9)}),
     ])
     def test_parse_entries(self, query, expected_answers):
-        assert set(self.parameter.parse_entries(query)) == expected_answers
+        assert set(self.parameter.get_entries(query)) == expected_answers
 
 
 class TestBooleanParameter:
-    parameter = BooleanParameter("test", "test")
+    parameter = BooleanParameter("id", "test")
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("1, ttt", set()),
@@ -68,7 +81,7 @@ class TestBooleanParameter:
         ("test,test", {Entry(starts_from=0, ends_at=4, value=True), Entry(starts_from=5, ends_at=9, value=True)}),
     ])
     def test_parse_entries(self, query, expected_answers):
-        assert set(self.parameter.parse_entries(query)) == expected_answers
+        assert set(self.parameter.get_entries(query)) == expected_answers
 
 
 class TestIntegerParameter:
@@ -89,8 +102,8 @@ class TestIntegerParameter:
         }),
     ])
     def test_parse_entries(self, query, expected_answers):
-        parameter = IntegerParameter("test", "test")
-        assert set(parameter.parse_entries(query)) == expected_answers
+        parameter = IntegerParameter("id", "test")
+        assert set(parameter.get_entries(query)) == expected_answers
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("-1, -5, 11, 9", {
@@ -99,8 +112,8 @@ class TestIntegerParameter:
         }),
     ])
     def test_parse_entries_with_min_max(self, query, expected_answers):
-        parameter = IntegerParameter("test", "test", min_value=-3, max_value=10)
-        assert set(parameter.parse_entries(query)) == expected_answers
+        parameter = IntegerParameter("id", "test", min_value=-3, max_value=10)
+        assert set(parameter.get_entries(query)) == expected_answers
 
 
 class TestFloatParameter:
@@ -112,13 +125,12 @@ class TestFloatParameter:
         }),
     ])
     def test_parse_entries(self, query, expected_answers):
-        parameter = FloatParameter("test", "test")
-        assert set(parameter.parse_entries(query)) == expected_answers
+        parameter = FloatParameter("id", "test")
+        assert set(parameter.get_entries(query)) == expected_answers
 
 
 class TestDateParameter:
-
-    parameter = DateParameter("test", "test")
+    parameter = DateParameter("id", "test")
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("2020-01-01, 2021-12-10", {
@@ -127,12 +139,11 @@ class TestDateParameter:
         }),
     ])
     def test_parse_entries(self, query, expected_answers):
-        assert set(self.parameter.parse_entries(query)) == expected_answers
+        assert set(self.parameter.get_entries(query)) == expected_answers
 
 
 class TestTimeUnitParameter:
-
-    parameter = TimeUnitParameter("test", "test")
+    parameter = TimeUnitParameter("id", "test")
 
     @pytest.mark.parametrize("query,expected_answers", [
         ("1 second", {Entry(starts_from=0, ends_at=8, value=1)}),
@@ -145,4 +156,4 @@ class TestTimeUnitParameter:
         ("5 minutes and 5 seconds", {Entry(starts_from=0, ends_at=22, value=305)}),
     ])
     def test_parse_entries(self, query, expected_answers):
-        assert set(self.parameter.parse_entries(query)) == expected_answers
+        assert set(self.parameter.get_entries(query)) == expected_answers

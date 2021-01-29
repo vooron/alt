@@ -2,30 +2,10 @@ import itertools
 import re
 from abc import ABCMeta, abstractmethod
 from datetime import date, timedelta
-from enum import Enum
 from typing import Optional, NamedTuple, Any, List, Dict
 
-from .choices_value_provider import ChoicesValueProvider, \
-    ChoicesValueProviderDeserializer
-from .parameter_value_provider import ParameterValueProvider, ConstantParameterValueProvider, \
-    ParameterValueProviderDeserializer
-
-
-choices_value_provider_deserializer = ChoicesValueProviderDeserializer()
-parameter_value_provider_deserializer = ParameterValueProviderDeserializer()
-
-
-class ParameterType(Enum):
-    DIGIT = 'DIGIT'
-    ORDINAL = 'ORDINAL'
-    BOOLEAN = 'BOOLEAN'  # FLAG
-    INTEGER = 'INTEGER'
-    FLOAT = 'FLOAT'
-    DATE = 'DATE'
-    TIME = 'TIME'  # skip for now
-    TIMEUNIT = 'TIMEUNIT'
-    WORD = 'WORD'  # skip for now
-    TEXT = 'TEXT'
+from .choices_value_provider import ChoicesValueProvider
+from .parameter_value_provider import ParameterValueProvider, ConstantParameterValueProvider
 
 
 class Entry(NamedTuple):
@@ -35,30 +15,36 @@ class Entry(NamedTuple):
 
 
 class Parameter(metaclass=ABCMeta):
-    type: ParameterType
+    id: str
     name: str
-    description: str
     default: Optional[ParameterValueProvider]
     choices: Optional[ChoicesValueProvider]
+    parse_from_residuals: bool = False
 
     def __init__(
             self,
+            id: str,
             name: str,
-            description: str,
             default: Optional[ParameterValueProvider] = None,
             choices: Optional[ChoicesValueProvider] = None
     ):
+        self.id = id
         self.name = name
-        self.description = description
         self.default = default
         self.choices = choices
 
+    def get_entries(self, query: str) -> List[Entry]:
+        entries = self._parse_entries(query)
+        if self.choices is not None:
+            entries = [e for e in entries if self.choices.is_entry_in(e.value)]
+        return entries
+
     @abstractmethod
-    def parse_entries(self, query: str) -> List[Entry]:
+    def _parse_entries(self, query: str) -> List[Entry]:
         pass
 
     @staticmethod
-    def get_entries_from_mapping(query: str, mapping: Dict[str, Any]) -> List[Entry]:
+    def _get_entries_from_mapping(query: str, mapping: Dict[str, Any]) -> List[Entry]:
         entries = []
         for key, value in mapping.items():
             entries.extend([Entry(
@@ -68,39 +54,8 @@ class Parameter(metaclass=ABCMeta):
             ) for m in re.finditer(key, query)])
         return entries
 
-    def to_dict(self):
-        return dict(
-            type=self.type.value,
-            name=self.name,
-            description=self.description,
-            default=self.default.to_dict() if self.default else None,
-            choices=self.choices.to_dict() if self.choices else None,
-        )
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        if not data['name']:
-            raise ValueError("Parameter name shouldn't be empty")
-        if not data['description']:
-            raise ValueError("Parameter description shouldn't be empty")
-
-        class_parameters = dict(data)
-        del class_parameters['type']
-
-        if class_parameters.get('default'):
-            class_parameters['default'] = parameter_value_provider_deserializer.from_dict(class_parameters['default'])
-
-        if class_parameters.get('choices'):
-            class_parameters['choices'] = choices_value_provider_deserializer.from_dict(class_parameters['choices'])
-
-        return cls(
-            **class_parameters
-        )
-
 
 class DigitParameter(Parameter):
-    type = ParameterType.DIGIT
-
     REGEX = r'\b-?\d\b'
     mapper_function = int
 
@@ -129,7 +84,7 @@ class DigitParameter(Parameter):
                 ))
         return dict(new_mapping_items)
 
-    def parse_entries(self, query: str) -> List[Entry]:
+    def _parse_entries(self, query: str) -> List[Entry]:
         entries = [Entry(
             starts_from=m.start(),
             ends_at=m.end(),
@@ -137,14 +92,12 @@ class DigitParameter(Parameter):
         ) for m in re.finditer(self.REGEX, query)]
 
         entries.extend(
-            self.get_entries_from_mapping(query, self._spawn_negative_mapping(self.numbers_mapping))
+            self._get_entries_from_mapping(query, self._spawn_negative_mapping(self.numbers_mapping))
         )
         return entries
 
 
 class OrdinalParameter(Parameter):
-    type = ParameterType.ORDINAL
-
     numbers_mapping = {
         "1st": 1,
         "first": 1,
@@ -161,59 +114,50 @@ class OrdinalParameter(Parameter):
         "tenth": 10
     }
 
-    def parse_entries(self, query: str) -> List[Entry]:
+    def _parse_entries(self, query: str) -> List[Entry]:
         entries = [Entry(
             starts_from=m.start(),
             ends_at=m.end(),
             value=int(m.group(1))
         ) for m in re.finditer(r'\b(\d+)-?th', query)]
 
-        entries.extend(self.get_entries_from_mapping(query, self.numbers_mapping))
+        entries.extend(self._get_entries_from_mapping(query, self.numbers_mapping))
         return entries
 
 
 class BooleanParameter(Parameter):
     """Check if flag present in text"""
-    type = ParameterType.BOOLEAN
     default = ConstantParameterValueProvider(value=False)
 
     def __init__(
             self,
-            name: str,
-            description: str,
+            id: str,
+            name: str
     ):
-        super(BooleanParameter, self).__init__(name, description)
+        super(BooleanParameter, self).__init__(id, name)
 
-    def parse_entries(self, query: str) -> List[Entry]:
+    def _parse_entries(self, query: str) -> List[Entry]:
         return [Entry(
             starts_from=m.start(),
             ends_at=m.end(),
             value=True
         ) for m in re.finditer(self.name, query)]
 
-    def to_dict(self):
-        data = super(BooleanParameter, self).to_dict()
-        del data['default']
-        del data['choices']
-        return data
-
 
 class IntegerParameter(DigitParameter):
-    type = ParameterType.INTEGER
-
     min_value: int
     max_value: int
 
     def __init__(
             self,
+            id: str,
             name: str,
-            description: str,
             default: Optional[ParameterValueProvider] = None,
             choices: Optional[ChoicesValueProvider] = None,
             min_value: int = None,
             max_value: int = None
     ):
-        super(IntegerParameter, self).__init__(name, description, default, choices)
+        super(IntegerParameter, self).__init__(id, name, default, choices)
         self.min_value = min_value
         self.max_value = max_value
 
@@ -228,8 +172,8 @@ class IntegerParameter(DigitParameter):
         "fifteen": 15
     }
 
-    def parse_entries(self, query: str) -> List[Entry]:
-        entries = super(IntegerParameter, self).parse_entries(query)
+    def _parse_entries(self, query: str) -> List[Entry]:
+        entries = super(IntegerParameter, self)._parse_entries(query)
         filtered_entries = []
         for entry in entries:
             if self.max_value is not None and entry.value < self.min_value:
@@ -239,35 +183,14 @@ class IntegerParameter(DigitParameter):
             filtered_entries.append(entry)
         return filtered_entries
 
-    def to_dict(self):
-        return dict(
-            **super(IntegerParameter, self).to_dict(),
-            min_value=self.min_value,
-            max_value=self.max_value
-        )
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        instance = super(IntegerParameter).from_dict(data)
-        return cls(
-            name=instance.name,
-            description=instance.description,
-            default=instance.default,
-            choices=instance.choices,
-            min_value=data.get('min_value'),
-            max_value=data.get('max_value')
-        )
-
 
 class FloatParameter(IntegerParameter):
-    type = ParameterType.FLOAT
     REGEX = r'(-?\d*\.?\d+)\b'
     mapper_function = float
 
 
 class DateParameter(Parameter):  # TODO: different date formats, related dates (2 days ago, etc)
 
-    type = ParameterType.DATE
     ISO_DATE_REGEX = r'\d{4}-\d{2}-\d{2}'
 
     dates_mapping = {
@@ -280,7 +203,7 @@ class DateParameter(Parameter):  # TODO: different date formats, related dates (
         "next day after tomorrow": lambda: date.today() + timedelta(days=2),
     }
 
-    def parse_entries(self, query: str) -> List[Entry]:
+    def _parse_entries(self, query: str) -> List[Entry]:
 
         entries = []
 
@@ -300,13 +223,11 @@ class DateParameter(Parameter):  # TODO: different date formats, related dates (
             except Exception:
                 pass
 
-        entries.extend(self.get_entries_from_mapping(query, self.dates_mapping))
+        entries.extend(self._get_entries_from_mapping(query, self.dates_mapping))
         return entries
 
 
 class TimeUnitParameter(Parameter):
-    type = ParameterType.TIMEUNIT
-
     HOUR_UNIT = 'hour'
     MINUTE_UNIT = 'minute'
     SECOND_UNIT = 'second'
@@ -332,7 +253,7 @@ class TimeUnitParameter(Parameter):
     def create_regex(numbers_mapping: dict, unit: str) -> str:
         return "(\\d+|" + "|".join(numbers_mapping.keys()) + ") " + unit
 
-    def parse_entries(self, query: str) -> List[Entry]:
+    def _parse_entries(self, query: str) -> List[Entry]:
         entries = []
 
         hour_entries = [Entry(
@@ -378,42 +299,31 @@ class TimeUnitParameter(Parameter):
 
 
 class TextParameter(Parameter):
-    type = ParameterType.TEXT
 
-    numbers_mapping = {
-        "1st": 1,
-        "first": 1,
-        "2nd": 2,
-        "second": 2,
-        "3rd": 3,
-        "third": 3,
-        "fourth": 4,
-        "fifth": 5,
-        "sixth": 6,
-        "seventh": 7,
-        "eighth": 8,
-        "ninth": 9,
-        "tenth": 10
-    }
+    def __init__(self,
+                 id: str,
+                 name: str,
+                 default: Optional[ParameterValueProvider] = None,
+                 choices: Optional[ChoicesValueProvider] = None):
+        super(TextParameter, self).__init__(id, name, default, choices)
+        self.parse_from_residuals = choices is None
 
-    def parse_entries(self, query: str) -> List[Entry]:
-        return [Entry(
-            starts_from=0,
-            ends_at=len(query),
-            value=query
-        )]
+    def _parse_entries(self, query: str) -> List[Entry]:
+        pass
 
+    def get_entries(self, query: str) -> List[Entry]:
+        if self.choices is None:
+            return [
+                Entry(starts_from=0, ends_at=len(query), value=query)
+            ]
 
-class ParameterDeserializer:
-    mapping = {
-        ParameterType.DIGIT: DigitParameter,
-        ParameterType.ORDINAL: OrdinalParameter,
-        ParameterType.BOOLEAN: BooleanParameter,
-        ParameterType.INTEGER: IntegerParameter,
-        ParameterType.DATE: DateParameter,
-        ParameterType.TIMEUNIT: TimeUnitParameter,
-        ParameterType.TEXT: TextParameter
-    }
+        if not self.choices.values:
+            return []
 
-    def from_dict(self, data: dict) -> Parameter:
-        return self.mapping[ParameterType(data['type'])].from_dict(data)
+        mapping = {}
+        for value in self.choices.values:
+            mapping[value.value.lower()] = (value.value, value.label)
+            mapping[value.label.lower()] = (value.value, value.label)
+
+        return self._get_entries_from_mapping(query, mapping)
+
