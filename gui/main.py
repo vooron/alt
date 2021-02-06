@@ -3,6 +3,8 @@
 
 
 import sys
+import random
+from typing import Callable
 
 from PySide2.QtCore import Qt, QTimer, QPropertyAnimation, QRect, QEasingCurve, QVariantAnimation
 from PySide2.QtGui import QColor
@@ -19,11 +21,17 @@ class VoiceAnimation:
     is_finished: bool = True
     window: QMainWindow
 
+    on_start: Callable[[], None]
+    on_stop: Callable[[], None]
+
     MIN_VALUE: int = 20
     MAX_VALUE: int = 60
+    ANIMATION_MS = 800
 
-    def __init__(self, window: QMainWindow):
+    def __init__(self, window: QMainWindow, on_start: Callable[[], None] = None, on_stop: Callable[[], None] = None):
         self.window = window
+        self.on_start = on_start
+        self.on_stop = on_stop
 
     def _new_animation(self, widget):
 
@@ -32,19 +40,24 @@ class VoiceAnimation:
         def set_height(val):
             widget.setFixedHeight(val)
 
+        forward_len = random.randint(self.MIN_VALUE + (self.MAX_VALUE - self.MIN_VALUE) // 3, self.MAX_VALUE)
+        forward_speed = random.randint(self.ANIMATION_MS // 4, self.ANIMATION_MS // 4 * 3)
+
+        # speed couldn't be random, because of thread save
+
         forward = QVariantAnimation(self.window)
         forward.setStartValue(20)
-        forward.setEndValue(60)
+        forward.setEndValue(forward_len)
         forward.setEasingCurve(QEasingCurve.InCurve)
-        forward.setDuration(400)
+        forward.setDuration(forward_speed)
         forward.valueChanged.connect(set_height)
         forward.start(QPropertyAnimation.DeleteWhenStopped)
 
         backward = QVariantAnimation(self.window)
-        backward.setStartValue(60)
+        backward.setStartValue(forward_len)
         backward.setEndValue(20)
         backward.setEasingCurve(QEasingCurve.InCurve)
-        backward.setDuration(400)
+        backward.setDuration(self.ANIMATION_MS - forward_speed)
         backward.valueChanged.connect(set_height)
 
         def controller():
@@ -64,6 +77,8 @@ class VoiceAnimation:
         self.is_active = True
 
         if not self.is_active and not self.is_finished:
+            if self.on_start:
+                self.on_start()
             return
 
         self._new_animation(self.window.ui.dot_animation_dot_1)
@@ -71,8 +86,13 @@ class VoiceAnimation:
         self._new_animation(self.window.ui.dot_animation_dot_3)
         self._new_animation(self.window.ui.dot_animation_dot_4)
 
+        if self.on_start:
+            self.on_start()
+
     def stop(self):
         self.is_active = False
+        if self.on_stop:
+            self.on_stop()
 
 
 class MainWindow(QMainWindow):
@@ -112,7 +132,11 @@ class MainWindow(QMainWindow):
         self.anim.setDuration(400)
         self.anim.start(QPropertyAnimation.DeleteWhenStopped)
 
-        self.voice_animation = VoiceAnimation(self)
+        self.voice_animation = VoiceAnimation(
+            self,
+            on_start=lambda: self.ui.lineEdit.setDisabled(True),
+            on_stop=lambda: self.ui.lineEdit.setDisabled(False)
+        )
 
         QTimer().singleShot(1000, lambda: self.voice_animation.start())
         QTimer().singleShot(3000, lambda: self.voice_animation.stop())
