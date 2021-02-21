@@ -1,9 +1,8 @@
 import json
 from dataclasses import dataclass
 from json.decoder import JSONDecodeError
-from typing import Dict, Union
+from typing import Dict, Union, Callable, Coroutine, Any
 
-import asyncio
 from websockets import WebSocketServerProtocol, ConnectionClosed
 
 
@@ -44,13 +43,37 @@ class ConnectionServerException(Exception):
 
 class ConnectionServer:
     connections: Dict[str, Connection]
+    routes: Dict[
+        str, Callable[  # event, handler callback
+            [
+                Event,
+                Callable[[Event], Coroutine[Any, Any, None]]  # expose_event callback
+            ], Coroutine[Any, Any, None]
+        ]
+    ]
 
-    def __init__(self):
+    def __init__(
+            self,
+            routes: Dict[
+                str, Callable[  # event, handler callback
+                    [
+                        Event,
+                        Callable[[Event], Coroutine[Any, Any, None]]  # expose_event callback
+                    ], Coroutine[Any, Any, None]
+                ]
+            ]
+    ):
         self.connections = {}
+        self.routes = routes
 
     async def on_connection_event(self, connection: Connection, event: Event):
         # TODO: logic
         print("Source:", connection.source_id, "| payload", event.payload)
+        route = self.routes.get(event.action)
+        if not route:
+            print("HANDLER NOT FOUND!")
+            return
+        await route(event, self.expose_event)
 
     async def expose_event(self, event: Event):
         await self.connections[event.target].connection.send(event.to_message())
@@ -86,4 +109,4 @@ class ConnectionServer:
         except ConnectionServerException as e:
             await websocket.close(code=e.code, reason=e.reason)
         except ConnectionClosed:
-            self.on_connection_close(connection) # noqa
+            self.on_connection_close(connection)  # noqa

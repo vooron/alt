@@ -20,6 +20,11 @@ class Command(metaclass=ABCMeta):
 
     @property
     @abstractmethod
+    def descriptive_name(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
     def indexed_data(self) -> IndexedData:
         pass
 
@@ -39,6 +44,10 @@ class SkillCommand(Command):
     def indexed_data(self) -> IndexedData:
         return self.skill.indexed_data
 
+    @property
+    def descriptive_name(self) -> str:
+        return self.skill.name + " | " + str(self.extracted_parameters)
+
     def __str__(self):
         return f"SkillCommand(id={self.skill.name}, distribution=f{self.distribution}, params={self.extracted_parameters})"
 
@@ -56,6 +65,10 @@ class SkillFunctionCommand(Command):
     def indexed_data(self) -> IndexedData:
         # join both vectors to make
         return IndexedData(vectors=self.function.indexed_data.vectors + self.skill_command.indexed_data.vectors)
+
+    @property
+    def descriptive_name(self) -> str:
+        return self.skill_command.skill.name + "." + self.function.name + " | " + str(self.extracted_parameters)
 
     @property
     def parameters(self) -> List[Parameter]:

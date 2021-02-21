@@ -44,14 +44,14 @@ class ConnectionClient:
     async def expose_event(self, event: Event):
         await self.connection.send(event.to_message())
 
-    async def start(self, on_event: Callable[['ConnectionClient', Event], None]):
+    async def start(self, on_event: Callable[[Event], None]):
         async with websockets.connect(f"ws://{self.hostname}:{self.port}") as connection:
             await self.authenticate(connection)
             self.connection = connection
             async for message in connection:
                 try:
                     event = Event.from_message(message)
-                    on_event(self, event)
+                    on_event(event)
                 except JSONDecodeError:
                     # TODO: handle
                     print("--JSON PARSE ERROR--")

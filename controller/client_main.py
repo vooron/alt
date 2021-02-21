@@ -4,11 +4,12 @@ import threading
 from controller.client import ConnectionClient, Event
 
 
-def on_event(client, event):
+client = ConnectionClient("TestConsoleClient")
+
+
+def on_event(event):
     print("Get:", event.target, event.payload)
     client.expose_event(event)
-
-client = ConnectionClient("TestConsoleClient")
 
 
 def init_client():

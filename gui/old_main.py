@@ -2,17 +2,15 @@
 # venv/lib/python3.8/site-packages/PySide2/uic -g python gui/qt_ui/ui_main.ui > gui/qt_components/ui_main.py
 
 
-import sys
 import random
+import sys
 from typing import Callable
 
 from PySide2.QtCore import Qt, QTimer, QPropertyAnimation, QRect, QEasingCurve, QVariantAnimation
 from PySide2.QtGui import QColor
-from PySide2.QtWidgets import QApplication, QMainWindow, QGraphicsDropShadowEffect, QDesktopWidget, \
-    QGraphicsOpacityEffect
+from PySide2.QtWidgets import QApplication, QMainWindow, QGraphicsDropShadowEffect, QDesktopWidget
 
 # GUI FILE
-from controller.client import ConnectionClient, Event
 from qt_components.ui_main import Ui_MainWindow
 
 
@@ -26,7 +24,7 @@ class VoiceAnimation:
 
     MIN_VALUE: int = 20
     MAX_VALUE: int = 60
-    ANIMATION_MS = 800
+    ANIMATION_MS = 600
 
     def __init__(self, window: QMainWindow, on_start: Callable[[], None] = None, on_stop: Callable[[], None] = None):
         self.window = window
@@ -96,7 +94,6 @@ class VoiceAnimation:
 
 
 class MainWindow(QMainWindow):
-
     WINDOW_WIDTH = 500
     WINDOW_HIGH = 300
 
@@ -125,9 +122,12 @@ class MainWindow(QMainWindow):
 
         self.show()
 
+        _g = self.ui.drop_shadow_frame.geometry()
+        _g_init = self.ui.drop_shadow_frame.geometry()
+        _g_init.setX(_g_init.x() + _g_init.width())
         self.anim = QPropertyAnimation(self.ui.drop_shadow_frame, b"geometry")
-        self.anim.setStartValue(QRect(500, 0, 500, 300))
-        self.anim.setEndValue(QRect(0, 0, 500, 300))
+        self.anim.setStartValue(_g_init)
+        self.anim.setEndValue(_g)
         self.anim.setEasingCurve(QEasingCurve.InCurve)
         self.anim.setDuration(400)
         self.anim.start(QPropertyAnimation.DeleteWhenStopped)
