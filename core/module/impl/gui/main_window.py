@@ -22,9 +22,9 @@ class MainWindow(QMainWindow):
     last_used_card_index: int = 0
     cards: Dict[int, WidgetCard]
 
-    client: ConnectionClient
+    emit_event: Callable
 
-    def __init__(self, client: ConnectionClient):
+    def __init__(self, emit_event: Callable):
         QMainWindow.__init__(self)
 
         self.client = client

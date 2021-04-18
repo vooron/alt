@@ -3,8 +3,8 @@ from typing import Callable
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import QWidget, QGraphicsDropShadowEffect
 
-from gui.cards.card import WidgetCard
-from gui.qt_components.ui_main_widget import Ui_MainWidget
+from core.module.impl.gui.cards.card import WidgetCard
+from core.module.impl.gui.qt_components.ui_main_widget import Ui_MainWidget
 
 
 class MainCard(WidgetCard):

@@ -6,12 +6,12 @@ import random
 import sys
 from typing import Callable
 
-from PySide2.QtCore import Qt, QTimer, QPropertyAnimation, QRect, QEasingCurve, QVariantAnimation
+from PySide2.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QVariantAnimation
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import QApplication, QMainWindow, QGraphicsDropShadowEffect, QDesktopWidget
 
 # GUI FILE
-from qt_components.ui_main import Ui_MainWindow
+from core.module.impl.gui.qt_components.ui_main import Ui_MainWindow
 
 
 class VoiceAnimation:
