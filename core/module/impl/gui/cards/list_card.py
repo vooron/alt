@@ -5,7 +5,7 @@ from PySide2.QtGui import QColor, QIcon
 from PySide2.QtWidgets import QWidget, QGraphicsDropShadowEffect, QListWidgetItem
 
 from core.module.impl.gui.cards.card import WidgetCard
-from core.module.impl.gui.qt_components.ui_list_widget import Ui_ListWidget
+from core.module.impl.gui.qt.components.ui_list_widget import Ui_ListWidget
 
 
 class ListCard(WidgetCard):

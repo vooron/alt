@@ -1,19 +1,11 @@
 from abc import abstractmethod, ABCMeta
 
-from core.communication.event import Event
+from core.application.application import Application
+from core.communication.connection_service import ConnectionService
 
 
-class Module(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def is_online(self) -> bool:
-        pass
+class Module(Application, metaclass=ABCMeta):
 
     @abstractmethod
-    def setup(self):
-        pass
-
-    @abstractmethod
-    def emit(self, event: Event):
+    def setup(self, connection_service: ConnectionService) -> None:
         pass

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from core.communication.topic import Topic
+from core.communication.command_identifier import CommandIdentifier
 
 
 @dataclass
 class Callback:
-    topic: Topic  # used to send answer back
+    target: CommandIdentifier  # used to send answer back

@@ -1,33 +1,34 @@
-from collections import Callable
-from typing import Dict
+import logging
+from typing import Dict, Callable
 
 from controller.client import Event
-from core.communication.topic import Topic
+from core.communication.command_identifier import CommandIdentifier
+from core.controller.controller import Controller
 from core.module.impl.gui.module import UIModule
+from core.module.impl.text_indexer.module import TextIndexerModule
+from core.module.impl.text_to_command.module import TextToCommandModule
 from core.module.module import Module
-from core.subscription.impl.wake_up import wake_up_subscription
 
-subscriptions: Dict[Topic, Callable[[Event], None]] = {
-    Topic("core", "userFlow", "wakeUp"): wake_up_subscription
+logging.basicConfig(level=logging.INFO)
+
+subscriptions: Dict[CommandIdentifier, Callable[[Event], None]] = {
+    CommandIdentifier("core", "userFlow", "wakeUp"): ...,
+    CommandIdentifier("core", "userFlow", "callCommandFromQuery"): ...
 }
 
 modules: Dict[str, Module] = {
     "UI": UIModule(),
-    "TextToCommand": ...,
-    "TextIndexer": ...,
+    "TextIndexer": TextIndexerModule(),  # Used to index config data + each query
+    "TextToCommand": TextToCommandModule(),  # Recommend top N commands to execute according to query.
 }
 
 if __name__ == "__main__":
-    pass
+    controller = Controller(
+        subscriptions=subscriptions,
+        modules=modules
+    )
 
-
-
-"""
-Event comes:
-1) Create Event object and fill all fields (like source, etc.)
-2) Check if event allowed.
-3) Call function
-"""
+    controller.setup()
 
 
 

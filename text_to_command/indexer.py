@@ -17,6 +17,11 @@ class Indexer:
         lc_cleared = re.sub(r"\s+", " ", lc_cleared)
         return lc_cleared.strip()
 
+    def get_embedding(self, s: str):
+        token = self.word_2_vec_mapper(s)
+        if token.has_vector:
+            return token.vector
+
     def get_index_function_data(self, function: SkillFunction):
         data = [
             self.clear_string(function.name),

@@ -1,10 +1,11 @@
+import logging
 from typing import Callable
 
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import QWidget, QGraphicsDropShadowEffect
 
 from core.module.impl.gui.cards.card import WidgetCard
-from core.module.impl.gui.qt_components.ui_main_widget import Ui_MainWidget
+from core.module.impl.gui.qt.components.ui_main_widget import Ui_MainWidget
 
 
 class MainCard(WidgetCard):
@@ -24,9 +25,10 @@ class MainCard(WidgetCard):
 
         ui.close_app_button.clicked.connect(lambda: self.send_message(self, self.EVENT_MESSAGE_CLOSE_CARD, {}))
 
-        ui.lineEdit.returnPressed.connect(self.on_text_command_entered)
+        ui.lineEdit.textChanged.connect(self.on_text_command_entered)
 
     def on_text_command_entered(self):
+        logging.info(f"MainCard on_text_command_entered")
         ui: Ui_MainWidget = self.ui  # noqa
         user_text_command = ui.lineEdit.text()
         user_text_command = user_text_command.strip()

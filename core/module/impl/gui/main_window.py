@@ -1,39 +1,44 @@
 # Compile with:
 # venv/lib/python3.8/site-packages/PySide2/uic -g python gui/qt_ui/ui_main.ui > gui/qt_components/ui_main.py
-
-
-import asyncio
-import sys
-import threading
+import json
+import logging
 from typing import Dict, Type, Callable
 
-from PySide2.QtCore import Qt, QObject, Signal
-from PySide2.QtWidgets import QApplication, QMainWindow, QDesktopWidget
+from PySide2.QtCore import Qt
+from PySide2.QtWidgets import QMainWindow, QDesktopWidget
 
-from controller.client import Event, ConnectionClient
 from core.module.impl.gui.cards.card import WidgetCard
-from core.module.impl.gui.cards.list_card import ListCard
 from core.module.impl.gui.cards.main_card import MainCard
 # GUI FILE
-from core.module.impl.gui.qt_components.ui_main_window import Ui_MainWindow
+from core.module.impl.gui.commands import on_add_card, on_hide_interface, on_show_interface
+from core.module.impl.gui.connection import UiCommunicationSignal
+from core.module.impl.gui.qt.components.ui_main_window import Ui_MainWindow
 
 
 class MainWindow(QMainWindow):
     last_used_card_index: int = 0
     cards: Dict[int, WidgetCard]
 
-    emit_event: Callable
+    commands: Dict[str, Callable[['MainWindow', dict], None]]
 
-    def __init__(self, emit_event: Callable):
+    def __init__(self, signals_object: UiCommunicationSignal):
         QMainWindow.__init__(self)
 
-        self.client = client
-        self.controller_message_signal = ControllerMessageSignal()
-        self.controller_message_signal.data.connect(self.on_controller_event_message)
-
-        # TODO: make size adjust to protect from transparent non-clickable zone.
         self.cards = {}
+        self._init_controller_communication(signals_object)
+        self._init_ui()
 
+        self.commands = {
+            "add_card": on_add_card,
+            "hide_interface": on_hide_interface,
+            "show_interface": on_show_interface
+        }
+
+    def _init_controller_communication(self, signals_object: UiCommunicationSignal):
+        self.controller_signals_object = signals_object
+        self.controller_signals_object.ui_input.connect(self.on_message_from_controller)
+
+    def _init_ui(self):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -41,14 +46,33 @@ class MainWindow(QMainWindow):
         self.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-        # TODO: check
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
 
         screen_top_right_point = QDesktopWidget().rect().topRight()
         self.move(screen_top_right_point.x(), screen_top_right_point.y() + 30)
 
-        self.add_card(MainCard)
-        self.show()
+    # === Controller communications ==============
+    def emit_to_controller(self, topic: str, payload: dict):
+        print(f"emit_to_controller({topic}, {payload})", flush=True)
+        self.controller_signals_object.ui_output.dispatch(json.dumps(dict(
+            topic=topic,
+            payload=payload
+        )))
+
+    def on_message_from_controller(self, message: str):
+        data = json.loads(message)
+        topic = data['topic']
+        payload = data['payload']
+
+        print(f"on_message_from_controller({topic}, {payload})", flush=True)
+        self.commands[topic](self, payload)
+    # === End controller communications ==============
+
+    # === on UI event
+    def on_ui_event(self, source_card: WidgetCard, topic: str, payload: dict):
+        print(f"on_ui_event[{source_card.__class__.__name__}]({topic}, {payload})", flush=True)
+        self.commands[topic](self, payload)
+    # === End on UI event
 
     def add_card(self, card_type: Type, position: int = None):
         self.last_used_card_index += 1
@@ -66,56 +90,3 @@ class MainWindow(QMainWindow):
             del self.cards[source_card.id]
 
         source_card.disappear(on_finish=remove_card)
-
-    def _send_user_text_command(self, source_card: WidgetCard, payload: dict):
-        asyncio.run(self.client.expose_event(Event("", "USER_TEXT_COMMAND_ENTERED", payload)))
-
-    def on_ui_event(self, source_card: WidgetCard, event: str, payload: dict):
-        routes: Dict[str, Callable[[WidgetCard, dict], None]] = {  # TODO: refactor
-            "CLOSE_CARD": self._close_card_command,
-            "USER_TEXT_COMMAND_ENTERED": self._send_user_text_command
-        }
-
-        route = routes.get(event)
-        if not route:
-            raise ValueError("Invalid event was provided.")
-
-        route(source_card, payload)
-
-    def on_controller_event_message(self, data: str):
-        event = Event.from_message(data)
-        if event.action == "SHOW_COMMAND_VARIANTS":  # TODO: add routing with commands
-            self.add_card(ListCard)  # TODO: refactor work with initial params
-            self.cards[self.last_used_card_index].on_message("SET_ITEMS", event.payload)
-        else:
-            print("Unknown action!")
-            return
-
-
-class ControllerMessageSignal(QObject):
-    # https://stackoverflow.com/questions/36453462/pyqt5-qobject-cannot-create-children-for-a-parent-that-is-in-a-different-thread
-    data = Signal(str)
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    client = ConnectionClient("FrontEnd")
-    main_window = MainWindow(client)
-
-
-    def init_client():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(
-            client.start(
-                lambda event: main_window.controller_message_signal.data.emit(event.to_message())
-            )
-        )
-        loop.run_forever()
-
-
-    t1 = threading.Thread(target=init_client)
-    t1.start()
-
-    sys.exit(app.exec_())
