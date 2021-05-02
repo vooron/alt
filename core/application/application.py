@@ -8,7 +8,9 @@ from core.communication.callback import Callback
 from core.communication.command_identifier import CommandIdentifier, ApplicationType
 from core.communication.connection import Connection
 from core.communication.connection_service import ConnectionService
-from core.communication.event import Message
+from core.communication.message import Message
+
+from core.communication.context_scope import ContextScope
 
 
 class Application(metaclass=ABCMeta):
@@ -46,7 +48,7 @@ class Application(metaclass=ABCMeta):
             target: CommandIdentifier,
             callback: Optional[Callback]
     ) -> None:
-        self._connection.dispatch(Message(
+        self._connection.send_message(Message(
             payload=payload,
             target=target,
             source=CommandIdentifier(
@@ -54,26 +56,31 @@ class Application(metaclass=ABCMeta):
             ),
             context=context,
             callback=callback
-        ))
+        ).serialize())
 
     def _on_event(self, event: Message):
         if event.target.function not in self._functions:
             logging.error(f"No such function({event.target.function}) in the system.")
             return
 
+        context_scope = ContextScope(application=self.id, function=event.target.function)
+        context = event.context.get(context_scope)
+        if context is None:
+            context = {}
+
         try:
             self._functions[event.target.function].execute(
                 event.target.command,
                 event.payload,
-                event.context,
+                context,
                 event.callback,
-                lambda command_id, payload, context, target, callback: self._dispatch_event(
+                lambda payload, context, target, callback: self._dispatch_event(
                     event.target.function,
                     event.target.command,
                     payload,
                     {
                         **event.context,  # IMPORTANT: context for the same command can be overwritten
-                        event.target: context
+                        context_scope: context
                     },
                     target,
                     callback

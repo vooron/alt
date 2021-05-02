@@ -1,9 +1,10 @@
 import logging
 from typing import Dict, Callable
 
+from core.communication.callback import Callback
 from core.communication.connection_service import ConnectionService
-from core.communication.event import Message
-from core.communication.topic import CommandIdentifier
+from core.communication.message import Message
+from core.communication.command_identifier import CommandIdentifier, ApplicationType
 from core.module.module import Module
 
 
@@ -31,5 +32,26 @@ class Controller:
 
     def setup(self) -> None:
         self._setup_modules()
+
+        self._connection_service.dispatch(Message(
+            source=None,
+            target=CommandIdentifier(ApplicationType.MODULE, "TextIndexer", "indexation", "get_indexed_data"),
+            context={},
+            callback=Callback(target=CommandIdentifier(ApplicationType.CORE, "app", "function", "command")),
+            payload={
+                "test": {
+                    "type": "SKILL",
+                    "name": "Test",
+                    "description": "Some text",
+                    "tags": ["Test", "Test1"]
+                },
+                "test.function": {
+                    "type": "SKILL_FUNCTION",
+                    "name": "Test",
+                    "description": "Some text",
+                    "call_examples": ["Test", "Test1"]
+                },
+            }
+        ))
 
 

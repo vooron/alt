@@ -1,3 +1,6 @@
+import dataclasses
+import json
+from dataclasses import dataclass
 from typing import Callable
 
 from PySide2.QtCore import QObject, Signal
@@ -10,6 +13,15 @@ class UiCommunicationSignal(QObject):
     # https://stackoverflow.com/questions/36453462/pyqt5-qobject-cannot-create-children-for-a-parent-that-is-in-a-different-thread
     ui_input = Signal(str)
     ui_output = Signal(str)
+
+
+@dataclass
+class CommandMessage:
+    topic: str
+    payload: dict
+
+    def serialize(self) -> str:
+        return json.dumps(dataclasses.asdict(self))
 
 
 class QtSignalConnection(Connection):

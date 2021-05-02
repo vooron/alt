@@ -12,7 +12,7 @@ class CommandResponse(NamedTuple):
     payload: dict
     context: dict
     target: CommandIdentifier
-    callback: Optional[Callback]
+    callback: Optional[Callback] = None
 
 
 class Function(metaclass=ABCMeta):
@@ -30,7 +30,7 @@ class Function(metaclass=ABCMeta):
         self._commands = self._init_commands()
 
     @abstractmethod
-    def _init_commands(self) -> Dict[str, Callable[[dict, dict], Optional[CommandResponse]]]:
+    def _init_commands(self) -> Dict[str, Callable[[dict, dict, Optional[Callback]], Optional[CommandResponse]]]:
         pass
 
     def execute(

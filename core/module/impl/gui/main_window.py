@@ -1,14 +1,12 @@
 # Compile with:
 # venv/lib/python3.8/site-packages/PySide2/uic -g python gui/qt_ui/ui_main.ui > gui/qt_components/ui_main.py
 import json
-import logging
 from typing import Dict, Type, Callable
 
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QMainWindow, QDesktopWidget
 
 from core.module.impl.gui.cards.card import WidgetCard
-from core.module.impl.gui.cards.main_card import MainCard
 # GUI FILE
 from core.module.impl.gui.commands import on_add_card, on_hide_interface, on_show_interface
 from core.module.impl.gui.connection import UiCommunicationSignal
@@ -54,7 +52,7 @@ class MainWindow(QMainWindow):
     # === Controller communications ==============
     def emit_to_controller(self, topic: str, payload: dict):
         print(f"emit_to_controller({topic}, {payload})", flush=True)
-        self.controller_signals_object.ui_output.dispatch(json.dumps(dict(
+        self.controller_signals_object.ui_output.emit(json.dumps(dict(
             topic=topic,
             payload=payload
         )))
@@ -66,12 +64,14 @@ class MainWindow(QMainWindow):
 
         print(f"on_message_from_controller({topic}, {payload})", flush=True)
         self.commands[topic](self, payload)
+
     # === End controller communications ==============
 
     # === on UI event
     def on_ui_event(self, source_card: WidgetCard, topic: str, payload: dict):
         print(f"on_ui_event[{source_card.__class__.__name__}]({topic}, {payload})", flush=True)
         self.commands[topic](self, payload)
+
     # === End on UI event
 
     def add_card(self, card_type: Type, position: int = None):

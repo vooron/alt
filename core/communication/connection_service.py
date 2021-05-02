@@ -3,7 +3,7 @@ from typing import Dict, Callable
 
 from core.communication.command_identifier import ApplicationType
 from core.communication.connection import Connection
-from core.communication.event import Message
+from core.communication.message import Message
 
 
 class ConnectionService:
@@ -45,7 +45,7 @@ class ConnectionService:
     def dispatch(self, event: Message):
         logging.info(f"Send event from {event.source} to {event.target}")
 
-        if event.target not in self._connections:
+        if event.target.application not in self._connections[event.target.type]:
             logging.error(f"No such topic {event.target} in the system")
             return
 

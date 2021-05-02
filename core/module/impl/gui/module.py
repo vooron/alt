@@ -9,6 +9,7 @@ from core.communication.command_identifier import ApplicationType
 from core.communication.connection import SyncConnection
 from core.communication.connection_service import ConnectionService
 from core.module.impl.gui.connection import UiCommunicationSignal
+from core.module.impl.gui.functions import CoreFunction
 from core.module.impl.gui.main_window import MainWindow
 from core.module.module import Module
 
@@ -25,7 +26,9 @@ class UIModule(Module):
         sys.exit(app.exec_())
 
     def _init_functions(self) -> Dict[str, Function]:
-        pass
+        return {
+            "core": CoreFunction(self._signal)
+        }
 
     def setup(self, connection_service: ConnectionService):
         ui_thread = threading.Thread(target=self._setup)
