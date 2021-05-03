@@ -1,20 +1,11 @@
 import logging
-from typing import Dict, Callable
+from typing import Dict
 
-from controller.client import Event
-from core.communication.command_identifier import CommandIdentifier
 from core.controller.controller import Controller
-from core.module.impl.gui.module import UIModule
 from core.module.impl.text_indexer.module import TextIndexerModule
-from core.module.impl.text_to_command.module import TextToCommandModule
 from core.module.module import Module
 
 logging.basicConfig(level=logging.INFO)
-
-subscriptions: Dict[CommandIdentifier, Callable[[Event], None]] = {
-    # CommandIdentifier("core", "userFlow", "wakeUp"): ...,
-    # CommandIdentifier("core", "userFlow", "callCommandFromQuery"): ...
-}
 
 modules: Dict[str, Module] = {
     # "UI": UIModule("UI"),
@@ -24,11 +15,7 @@ modules: Dict[str, Module] = {
 
 if __name__ == "__main__":
     controller = Controller(
-        subscriptions=subscriptions,
         modules=modules
     )
 
     controller.setup()
-
-
-
