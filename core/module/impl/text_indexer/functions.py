@@ -6,7 +6,7 @@ from core.skill.index import IndexData, ExactWeightedUnit, EmbeddingWeightedUnit
 from text_to_command.indexer import Indexer
 
 
-class IndexationFunction(Function):
+class QueryIndexationFunction(Function):
     _get_indexer: Callable[[], Indexer]
 
     def __init__(self, get_indexer: Callable[[], Indexer]):
@@ -15,23 +15,39 @@ class IndexationFunction(Function):
 
     def _init_commands(self) -> Dict[str, Callable[[dict, dict], Optional[CommandResponse]]]:
         return {
-            "getEmbedding": self._get_embedding,
-            "get_indexed_data": self._get_indexed_data
+            "main": self._get_indexed_query
         }
 
-    def _get_embedding(self, payload: dict, context: dict, callback: Optional[CommandResponse]):
-        print(f"_get_embedding({payload.get('text')})")
+    def _get_indexed_query(self, payload: dict, context: dict, callback: Optional[CommandResponse]):
+        print(f"_get_indexed_query({payload.get('user_query')})")
         indexer = self._get_indexer()
-        c_text = indexer.clear_string(payload['text'])
+        c_text = indexer.clear_string(payload['user_query'])
         embedding = indexer.get_embedding(c_text)
 
         return CommandResponse(
             payload={
-                "embedding": embedding.tolist()
+                "query": {
+                    "raw": payload['user_query'],
+                    "cleared": c_text,
+                    "embedding": embedding.tolist() if embedding is not None else None
+                }
             },
             context={},
             target=callback.target
         )
+
+
+class ConfigIndexationFunction(Function):
+    _get_indexer: Callable[[], Indexer]
+
+    def __init__(self, get_indexer: Callable[[], Indexer]):
+        super().__init__()
+        self._get_indexer = get_indexer
+
+    def _init_commands(self) -> Dict[str, Callable[[dict, dict], Optional[CommandResponse]]]:
+        return {
+            "main": self._get_indexed_data
+        }
 
     def __get_skill_index_data(self, payload: dict) -> IndexData:
         indexer = self._get_indexer()

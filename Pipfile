@@ -7,11 +7,11 @@ verify_ssl = true
 jupyter = "*"
 
 [packages]
-slugify = "*"
 numpy = "*"
 pandas = "*"
 python-levenshtein = "*"
 spacy = "*"
+python-slugify = "==1.2.2"
 
 [requires]
 python_version = "3.8"

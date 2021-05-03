@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "0285a24192ecd1a902ecfb47976bd4f9672c662dd4d5cbd74258ac1d576b6cf0"
+            "sha256": "b9314bfab8ec9bc371d9e2816b97066d6014f7b086e9f579ca40e6c1920248ce"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -309,6 +309,13 @@
             "index": "pypi",
             "version": "==0.12.2"
         },
+        "python-slugify": {
+            "hashes": [
+                "sha256:5b28bed69d750d062b4b597895eebce9f7efaaba8ed4725cab756603834c0eb8"
+            ],
+            "index": "pypi",
+            "version": "==1.2.2"
+        },
         "pytz": {
             "hashes": [
                 "sha256:83a4a90894bf38e243cf052c8b58f381bfe9a7a483f6a9cab140bc7f702ac4da",
@@ -329,13 +336,6 @@
                 "sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced"
             ],
             "version": "==1.15.0"
-        },
-        "slugify": {
-            "hashes": [
-                "sha256:c5703cc11c1a6947536f3ce8bb306766b8bb5a84a53717f5a703ce0f18235e4c"
-            ],
-            "index": "pypi",
-            "version": "==0.0.1"
         },
         "smart-open": {
             "hashes": [
@@ -418,6 +418,13 @@
                 "sha256:ba58b920ce851b12a2d790143009fa00ac1d05b3ff3257061ff69dbdfc3d161b"
             ],
             "version": "==0.3.2"
+        },
+        "unidecode": {
+            "hashes": [
+                "sha256:12435ef2fc4cdfd9cf1035a1db7e98b6b047fe591892e81f34e94959591fad00",
+                "sha256:8d73a97d387a956922344f6b74243c2c6771594659778744b2dbdaad8f6b727d"
+            ],
+            "version": "==1.2.0"
         },
         "urllib3": {
             "hashes": [
@@ -816,10 +823,10 @@
         },
         "pygments": {
             "hashes": [
-                "sha256:2656e1a6edcdabf4275f9a3640db59fd5de107d88e8663c5d4e9a0fa62f77f94",
-                "sha256:534ef71d539ae97d4c3a4cf7d6f110f214b0e687e92f9cb9d2a3b0d3101289c8"
+                "sha256:a18f47b506a429f6f4b9df81bb02beab9ca21d0a5fee38ed15aef65f0545519f",
+                "sha256:d66e804411278594d764fc69ec36ec13d9ae9147193a1740cd34d272ca383b8e"
             ],
-            "version": "==2.8.1"
+            "version": "==2.9.0"
         },
         "pyparsing": {
             "hashes": [

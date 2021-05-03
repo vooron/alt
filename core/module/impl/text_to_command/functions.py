@@ -8,11 +8,11 @@ from core.application.function import Function, CommandResponse
 from core.communication.callback import Callback
 
 
-class UserQueryProcessingFunction(Function):
+class GetSkillsRatingByQueryFunction(Function):
 
     def _init_commands(self) -> Dict[str, Callable[[dict, dict, Optional[Callback]], Optional[CommandResponse]]]:
         return {
-            "getRating": self._get_rating
+            "main": self._get_rating
         }
 
     def __get_exact_df(self, config: dict) -> pd.DataFrame:
@@ -85,11 +85,14 @@ class UserQueryProcessingFunction(Function):
         for key, similarity in calculated_dict.items():
             if "." in key:
                 skill_id, function_id = key.split(".")
-                calculated_dict[key] = skill_score_weight * calculated_dict[skill_id] + (1 - skill_score_weight) * \
-                                       calculated_dict[key]
+                calculated_dict[key] = skill_score_weight * calculated_dict[skill_id] + (1 - skill_score_weight
+                                                                                         ) * calculated_dict[key]
 
-        for key, similarity in sorted(calculated_dict.items(), key=lambda x: x[1], reverse=True)[:5]:
-            print(key, similarity)
+        return CommandResponse(
+            payload=dict(sorted(calculated_dict.items(), key=lambda x: x[1], reverse=True)[:5]),
+            context={},
+            target=callback.target
+        )
 
 
 def calculate_exact_similarity(query: str):

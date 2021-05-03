@@ -18,16 +18,14 @@ class Message:
     def serialize(self):
         source = None
         if self.source:
-            source = (self.source.type.name, self.source.application, self.source.function, self.source.command)
-
-        target = (self.target.type.name, self.target.application, self.target.function, self.target.command)
+            source = str(self.source)
 
         return json.dumps({
             "payload": self.payload,
             "source": source,
-            "target": target,
+            "target": str(self.target),
             "context": {".".join(c): v for c, v in self.context.items()},
-            "callback": asdict(self.callback) if self.callback else None
+            "callback": self.callback.to_dict() if self.callback else None
         })
 
     @classmethod
@@ -36,8 +34,8 @@ class Message:
         data = json.loads(message)
         return cls(
             payload=data['payload'],
-            source=CommandIdentifier(*data['source']) if data.get('source') else None,
-            target=CommandIdentifier(*data['target']),
+            source=CommandIdentifier.deserialize(data['source']) if data.get('source') else None,
+            target=CommandIdentifier.deserialize(data['target']),
             context={ContextScope(*source.split(".")): payload for source, payload in data['context'].items()},
-            callback=Callback(**data['callback']) if data.get('callback') else None
+            callback=Callback.from_dict(data['callback']) if data.get('callback') else None
         )

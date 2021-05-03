@@ -5,7 +5,7 @@ import spacy
 from core.application.function import Function
 from core.communication.connection import SyncConnection
 from core.communication.connection_service import ConnectionService
-from core.module.impl.text_indexer.functions import IndexationFunction
+from core.module.impl.text_indexer.functions import ConfigIndexationFunction, QueryIndexationFunction
 from core.module.module import Module
 from text_to_command.indexer import Indexer
 
@@ -15,7 +15,8 @@ class TextIndexerModule(Module):
 
     def _init_functions(self) -> Dict[str, Function]:
         return {
-            "indexation": IndexationFunction(lambda: self._indexer)
+            "configIndexationFunction": ConfigIndexationFunction(lambda: self._indexer),
+            "queryIndexation": QueryIndexationFunction(lambda: self._indexer)
         }
 
     def setup(self, connection_service: ConnectionService):

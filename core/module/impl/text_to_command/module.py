@@ -3,6 +3,7 @@ from typing import Dict
 from core.application.function import Function
 from core.communication.connection import Connection, SyncConnection
 from core.communication.connection_service import ConnectionService
+from core.module.impl.text_to_command.functions import GetSkillsRatingByQueryFunction
 from core.module.module import Module
 
 
@@ -15,4 +16,6 @@ class TextToCommandModule(Module):
         connection_service.add_connection(self.application_type, self.id, self._connection)
 
     def _init_functions(self) -> Dict[str, Function]:
-        pass
+        return {
+            "getSkillsRatingByQuery": GetSkillsRatingByQueryFunction()
+        }

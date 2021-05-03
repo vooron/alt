@@ -41,8 +41,11 @@ class IndexData:
     def serialize(self) -> str:
         return json.dumps(asdict(self))
 
+    def to_dict(self):
+        return asdict(self)
+
     @classmethod
-    def deserialize(cls, data: dict) -> 'IndexData':
+    def from_dict(cls, data: dict) -> 'IndexData':
         exact = []
         embeddings = []
 

@@ -33,7 +33,7 @@ class ConnectionService:
         logging.info(f"Connection {application_type}.{application} was closed.")
 
     def on_message(self, application_type: ApplicationType, application: str, message: str):
-        logging.info(f"Message from {application_type}.{application}: {message}.")
+        logging.info(f"Message from {application_type}.{application}")
         event = Message.deserialize(message)
 
         if event.source.type != application_type or event.source.application != application:
