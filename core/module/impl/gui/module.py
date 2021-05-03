@@ -18,9 +18,12 @@ class UIModule(Module):
     _main_window: MainWindow
     _signal: UiCommunicationSignal
 
+    def __init__(self, id: str):
+        self._signal = UiCommunicationSignal()
+        super().__init__(id)
+
     def _setup(self):
         app = QApplication(sys.argv)
-        self._signal = UiCommunicationSignal()
 
         self._main_window = MainWindow(self._signal)
         sys.exit(app.exec_())
