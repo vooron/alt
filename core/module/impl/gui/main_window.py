@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         self.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-        # self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
 
         screen_top_right_point = QDesktopWidget().rect().topRight()
         self.move(screen_top_right_point.x(), screen_top_right_point.y() + 30)
@@ -90,6 +90,8 @@ class MainWindow(QMainWindow):
         if position is None:
             position = len(self.cards) - 1
         self.ui.verticalLayout.insertWidget(position, card.widget, alignment=Qt.AlignTop)
+        self.resize(self.ui.verticalLayout.sizeHint())
+
         self.show()
 
     def close_card(self, source_card: WidgetCard):
@@ -97,5 +99,8 @@ class MainWindow(QMainWindow):
         def remove_card():
             self.ui.verticalLayout.removeWidget(source_card.widget)
             del self.cards[source_card.id]
+            self.resize(self.ui.verticalLayout.sizeHint())
+            if not self.cards:
+                self.hide()
 
         source_card.disappear(on_finish=remove_card)
