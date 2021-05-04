@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Callable
 
 import spacy
 
@@ -11,6 +11,7 @@ from text_to_command.indexer import Indexer
 
 
 class TextIndexerModule(Module):
+
     _indexer: Indexer
 
     def _init_functions(self) -> Dict[str, Function]:
@@ -18,6 +19,9 @@ class TextIndexerModule(Module):
             "configIndexationFunction": ConfigIndexationFunction(lambda: self._indexer),
             "queryIndexation": QueryIndexationFunction(lambda: self._indexer)
         }
+
+    def register_cycle_handlers(self, register_cycle_handler: Callable[[Callable[[], None]], None]):
+        pass
 
     def setup(self, connection_service: ConnectionService):
         self._indexer = Indexer(spacy.load("en_core_web_md"))

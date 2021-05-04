@@ -12,6 +12,8 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
+from settings import UI_RESOURCES_FOLDER
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -63,7 +65,7 @@ class Ui_MainWindow(object):
         self.info_button.setMaximumSize(QSize(30, 30))
         self.info_button.setStyleSheet(u"border: 0px;")
         icon = QIcon()
-        icon.addFile(u"../gui/resources/icons/info-button.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(str(UI_RESOURCES_FOLDER / "icons" / "info-button.svg"), QSize(), QIcon.Normal, QIcon.Off)
         self.info_button.setIcon(icon)
 
         self.horizontalLayout_2.addWidget(self.info_button)
@@ -73,7 +75,7 @@ class Ui_MainWindow(object):
         self.configurations_button.setMaximumSize(QSize(30, 30))
         self.configurations_button.setStyleSheet(u"border: 0px;")
         icon1 = QIcon()
-        icon1.addFile(u"../gui/resources/icons/gear.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(str(UI_RESOURCES_FOLDER / "icons" / "gear.svg"), QSize(), QIcon.Normal, QIcon.Off)
         self.configurations_button.setIcon(icon1)
 
         self.horizontalLayout_2.addWidget(self.configurations_button)
@@ -83,7 +85,7 @@ class Ui_MainWindow(object):
         self.close_app_button.setMaximumSize(QSize(30, 30))
         self.close_app_button.setStyleSheet(u"border: 0px;")
         icon2 = QIcon()
-        icon2.addFile(u"../gui/resources/icons/remove-button.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u"../../resources/icons/remove-button.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.close_app_button.setIcon(icon2)
 
         self.horizontalLayout_2.addWidget(self.close_app_button)
@@ -210,7 +212,7 @@ class Ui_MainWindow(object):
         self.lineEdit = QLineEdit(self.text_input_frame)
         self.lineEdit.setObjectName(u"lineEdit")
         self.lineEdit.setMinimumSize(QSize(300, 0))
-        self.lineEdit.setMaximumSize(QSize(300, 16777215))
+        self.lineEdit.setMaximumSize(QSize(400, 16777215))
         self.lineEdit.setStyleSheet(u"border-bottom: 1px solid #000;\n"
 "border-radius: 0px;\n"
 "background-color: rgba(255, 255, 255, 0);")

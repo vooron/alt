@@ -12,6 +12,8 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
+from settings import UI_RESOURCES_FOLDER
+
 
 class Ui_ListWidget(object):
     def setupUi(self, ListWidget):
@@ -64,7 +66,7 @@ class Ui_ListWidget(object):
         self.close_app_button.setMaximumSize(QSize(30, 30))
         self.close_app_button.setStyleSheet(u"border: 0px;")
         icon = QIcon()
-        icon.addFile(u"resources/icons/remove-button.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(str(UI_RESOURCES_FOLDER / "icons" / "remove-button.svg"), QSize(), QIcon.Normal, QIcon.Off)
         self.close_app_button.setIcon(icon)
 
         self.horizontalLayout_2.addWidget(self.close_app_button)

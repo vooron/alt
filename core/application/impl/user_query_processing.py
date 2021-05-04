@@ -148,7 +148,34 @@ class ProcessUserQueryFunction(Function):
         print("===========================================", flush=True)
         for key, value in payload.items():
             print(f"   {key}: {value}")
-        return
+
+        variants = []
+        for key, value in payload.items():
+            if "." in key:
+                skill_id, function_id = key.split(".")
+                skill = self._application.skills_config[skill_id]
+                function = skill.functions[function_id]
+
+                variants.append({
+                    "id": key,
+                    "label": f"{function.name} | {skill.name}"
+                })
+            else:
+                skill = self._application.skills_config[key]
+                variants.append({
+                    "id": key,
+                    "label": f"{skill.name}"
+                })
+
+        return CommandResponse(
+            payload={
+                "variants": variants,
+            },
+            context={},
+            target=CommandIdentifier(
+                ApplicationType.MODULE, "UI", "core", "askUserSelectCommandFromVariants"
+            )
+        )
 
     def _on_user_query(self, payload: dict, context: dict, callback: Optional[Callback]) -> Optional[CommandResponse]:
         return CommandResponse(

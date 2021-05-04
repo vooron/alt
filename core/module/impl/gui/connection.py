@@ -1,7 +1,7 @@
 import dataclasses
 import json
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, NamedTuple
 
 from PySide2.QtCore import QObject, Signal
 
@@ -15,13 +15,17 @@ class UiCommunicationSignal(QObject):
     ui_output = Signal(str)
 
 
-@dataclass
-class CommandMessage:
+class CommandMessage(NamedTuple):  # Says UI what to do
     topic: str
     payload: dict
 
-    def serialize(self) -> str:
-        return json.dumps(dataclasses.asdict(self))
+    def serialize(self):
+        return json.dumps(self)
+
+
+class UIEvent(NamedTuple):  # Says UI what happened
+    name: str
+    payload: dict
 
 
 class QtSignalConnection(Connection):

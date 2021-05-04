@@ -1,8 +1,8 @@
 import logging
-from typing import Dict
+from typing import Dict, List, Callable
 
 from core.application.application import Application
-from core.communication.command_identifier import CommandIdentifier, ApplicationType
+from core.communication.command_identifier import ApplicationType, CommandIdentifier
 from core.communication.connection_service import ConnectionService
 from core.communication.message import Message
 from core.module.module import Module
@@ -13,10 +13,13 @@ class Controller:
     _applications: Dict[str, Application]
     _connection_service: ConnectionService
 
+    _cycle_handlers: List[Callable[[], None]]
+
     def __init__(self, modules: Dict[str, Module], applications: Dict[str, Application]):
         self._modules = modules
         self._connection_service = ConnectionService(self.on_event)
         self._applications = applications
+        self._cycle_handlers = []
 
     def on_event(self, event: Message):
         """check access permissions, translate event to target or handler"""
@@ -27,6 +30,7 @@ class Controller:
         logging.info("=== Init modules start ===")
         for module_name, module in self._modules.items():
             module.setup(self._connection_service)
+            module.register_cycle_handlers(lambda handler: self._cycle_handlers.append(handler))
             logging.info(f"Module {module_name} inited.")
         logging.info("=== Init modules end ===")
 
@@ -37,17 +41,23 @@ class Controller:
             logging.info(f"Application {application_name} inited.")
         logging.info("=== Init applications end ===")
 
+    def _start_event_loop(self):
+        while True:
+            for handle in self._cycle_handlers:
+                handle()
+
     def setup(self) -> None:
+
         self._setup_modules()
         self._setup_applications()
 
         self._connection_service.dispatch(Message(
-            payload={
-                "user_query": "Send Message"
-            },
+            payload={},
             target=CommandIdentifier(
-                ApplicationType.CORE, "UserQueryProcessing", "processUserQueryFunction", "main"
+                ApplicationType.MODULE, "UI", "core", "wakeUp"
             ),
             source=None,
             context={}
         ))
+
+        self._start_event_loop()

@@ -4,6 +4,8 @@ from typing import Protocol, Callable
 from PySide2.QtCore import QPropertyAnimation, QEasingCurve
 from PySide2.QtWidgets import QWidget
 
+from core.module.impl.gui.connection import UIEvent
+
 
 class WidgetContainer(Protocol):
     @abstractmethod
@@ -15,8 +17,9 @@ class WidgetCard(metaclass=ABCMeta):
     id: int
     widget: QWidget
     ui: WidgetContainer
+    params: dict  # params of how to init card
 
-    send_message: Callable[['WidgetCard', str, dict], None]
+    _on_event: Callable[[UIEvent], None] = None
 
     # Card event messages
     EVENT_MESSAGE_CLOSE_CARD = "CLOSE_CARD"
@@ -27,13 +30,20 @@ class WidgetCard(metaclass=ABCMeta):
             id: int,
             widget: QWidget,
             ui: WidgetContainer,
-            send_message_callback: Callable[['WidgetCard', str, dict], None]
+            params: dict
     ):
         self.id = id
         self.widget = widget
         self.ui = ui
-        self.send_message = send_message_callback
+        self.params = params
         ui.setupUi(widget)
+
+    def set_on_event(self, on_event: Callable[[UIEvent], None]):
+        self._on_event = on_event
+
+    def dispatch_event(self, event: UIEvent):
+        if self._on_event:
+            self._on_event(event)
 
     def _appear(self, animated_frame):
         _g = animated_frame.geometry()
