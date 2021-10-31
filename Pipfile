@@ -13,6 +13,10 @@ python-levenshtein = "*"
 spacy = "*"
 python-slugify = "==1.2.2"
 pyside2 = "*"
+matplotlib = "*"
+sklearn = "*"
+bert-serving-server = "*"
+bert-serving-client = "*"
 
 [requires]
 python_version = "3.8"
